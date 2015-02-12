@@ -1,23 +1,29 @@
 package server
 
-import akka.actor.{ActorRef, Props}
+import akka.actor.{ActorLogging, Actor, ActorRef, Props}
 import persistence.Persistence
-import server.Session.{Login, Logout}
+import server.Session.{LoginAck, LoginError, Login, Logout}
 
 /**
  * Users' session management
  */
 trait SessionManagement {
-  this: ChatServer with Persistence =>
+  this: Actor with ActorLogging with Persistence =>
 
   private var sessionsMap = Map.empty[String, ActorRef] // username -> session
-  val sessions = sessionsMap
+  def sessions = sessionsMap
 
   protected def sessionManagement: PartialFunction[Any, Unit] = {
     case Login(username) =>
-      log.info(s"*** User $username has logged in")
-      val session = context.actorOf(Props(classOf[Session], username, storage))
-      sessionsMap += username -> session
+      sessionsMap.get(username) match {
+        case Some(s) =>
+          sender() ! LoginError("Username already in use")
+        case _ =>
+          log.info(s"*** User $username has logged in")
+          val session = context.actorOf(Props(classOf[Session], username, storage))
+          sessionsMap += username -> session
+          sender() ! LoginAck
+      }
 
     case Logout(username) =>
       log.info(s"*** User $username has logged out")

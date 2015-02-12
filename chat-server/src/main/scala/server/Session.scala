@@ -5,6 +5,8 @@ import akka.actor.{Actor, ActorLogging, ActorRef}
 object Session {
   sealed trait Event
   case class Login(name: String) extends Event
+  case class LoginError(error: String) extends Event
+  case object LoginAck extends Event
   case class Logout(name: String) extends Event
 
   case class ChatMessage(fromUser: String, message: String) extends Event
@@ -22,13 +24,23 @@ class Session(user: String, storage: ActorRef) extends Actor with ActorLogging{
   import Session._
 
   private val loginTime = System.currentTimeMillis()
-  private var messages = List.empty[String]
+
+  /**
+   * A list of messages sent during the current session.
+   * It could serve as an additional copy for the case
+   * of failures in message storing and broadcasting,
+   * though would need a more elaborate development not
+   * implemented here.
+   */
+  private var messagesList = List.empty[String]
+
+  def messages = messagesList
 
   log.info(s"*** New Session for user $user has been created at $loginTime")
 
   override def receive: Receive = {
     case event: ChatMessage =>
-      messages ::= event.message
+      messagesList ::= event.message
       storage forward event
 
     case event: GetChatLog =>
