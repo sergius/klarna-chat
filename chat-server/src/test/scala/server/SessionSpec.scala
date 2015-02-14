@@ -19,7 +19,7 @@ with BeforeAndAfterAll {
       val testUser = "test"
       val testMsg = "message"
       val sender = TestProbe()
-      val sessionRef = TestActorRef(new Session(sender.ref, system.actorOf(Props[Dummy])))
+      val sessionRef = TestActorRef(new Session(testUser, sender.ref, system.actorOf(Props[Dummy])))
       val sessionActor = sessionRef.underlyingActor
 
       sessionActor.messages shouldBe empty
@@ -34,7 +34,7 @@ with BeforeAndAfterAll {
       val testUser = "test"
       val testMsg = "message"
       val sender = TestProbe()
-      val sessionRef = TestActorRef(new Session(sender.ref, system.actorOf(Props[Dummy])))
+      val sessionRef = TestActorRef(new Session(testUser, sender.ref, system.actorOf(Props[Dummy])))
       val sessionActor = sessionRef.underlyingActor
 
       sessionActor.messages shouldBe empty
@@ -49,7 +49,7 @@ with BeforeAndAfterAll {
       val testMsg = "message"
       val sender = TestProbe()
       val storage = TestProbe()
-      val sessionRef = TestActorRef(new Session(sender.ref, storage.ref))
+      val sessionRef = TestActorRef(new Session(testUser, sender.ref, storage.ref))
 
       val msg = ChatMessage(testUser, testMsg)
       sender.send(sessionRef, msg)
@@ -63,7 +63,7 @@ with BeforeAndAfterAll {
       val testUser = "test"
       val testMsg = "message"
       val sender = TestProbe()
-      val sessionRef = TestActorRef(new Session(sender.ref, system.actorOf(Props[Dummy])))
+      val sessionRef = TestActorRef(new Session(testUser, sender.ref, system.actorOf(Props[Dummy])))
 
       val msg: ChatLog = ChatLog(List((testUser, testMsg)))
       sessionRef ! msg

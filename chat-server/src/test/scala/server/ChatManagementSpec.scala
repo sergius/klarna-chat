@@ -4,6 +4,7 @@ import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import messages.Dialog.{ChatError, ChatLog, ChatMessage}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
+import server.ChatManagement.Broadcast
 
 class ChatManagementSpec extends TestKit(ActorSystem("ChatManagementSpec"))
 with ImplicitSender
@@ -43,8 +44,8 @@ with BeforeAndAfterAll {
     }
   }
 
-  "On receiving ChatLog(list), ChatManagement" must {
-    "broadcast the chatLog to all connected users" in {
+  "On receiving Broadcast(msg, list), ChatManagement" must {
+    "when empty list, broadcast the message to all connected users" in {
       val user1 = "user1"
       val messageTester1 = TestProbe()
       val user2 = "user2"
@@ -54,7 +55,7 @@ with BeforeAndAfterAll {
 
       val chatMngmnt = system.actorOf(Props(classOf[ChatManagementTestImpl], sessions))
 
-      chatMngmnt ! ChatLog(List())
+      chatMngmnt ! Broadcast(ChatLog(List()), List())
 
       messageTester1.expectMsgClass(classOf[ChatLog])
       messageTester2.expectMsgClass(classOf[ChatLog])

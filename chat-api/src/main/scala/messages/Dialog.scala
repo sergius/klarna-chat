@@ -3,7 +3,9 @@ package messages
 import akka.actor.ActorRef
 
 object Dialog {
-  val NotLoggedError = "You should be logged in to chat. Login, please."
+
+  def notLoggedError(user: String = "You"): String =
+    s"Not logged. $user should log-in to start chatting."
 
   abstract class Request
   case class Login(username: String, ref: ActorRef) extends Request

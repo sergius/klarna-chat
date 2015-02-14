@@ -2,11 +2,13 @@ package persistence
 
 import java.nio.file.{Files, Paths}
 
-import akka.actor.ActorSystem
-import akka.testkit.{ImplicitSender, TestActorRef, TestKit, TestProbe}
+import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.testkit._
+import akka.util.Timeout
 import commons.Commons._
 import messages.Dialog.{ChatLog, ChatMessage, GetChatLog}
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, Matchers, WordSpecLike}
+import server.ChatManagement.Broadcast
 
 import scala.io.Source
 
@@ -60,34 +62,59 @@ with BeforeAndAfterAll {
       lines should contain(testUser + FileStorage.Separator + testMsg)
     }
 
-    "return updated chatLog to the sender of ChatMessage (i.e. to ChatManagement)" in {
+    "On receiving ChatMessage, send updated chatLog for Broadcast to parent" in {
       val messages = List(("test1", "msg1"), ("test2", "msg2"), ("test3", "msg3"))
-      val storage = TestActorRef(new FileStorage(TestStorage))
       val messageTester = TestProbe()
 
-      messages foreach { m =>
-        messageTester.send(storage, ChatMessage(m._1, m._2))
+      class Mock extends Actor {
+        override def receive: Receive = {
+          case msg @ _ => messageTester.ref forward msg
+        }
+        val storage = context.actorOf(Props(classOf[FileStorage], TestStorage))
       }
+      val parent = TestActorRef(new Mock)
+      val storage: ActorRef = parent.underlyingActor.storage
 
-      messageTester.expectMsg(ChatLog(messages.take(1)))
-      messageTester.expectMsg(ChatLog(messages.take(2).reverse))
-      messageTester.expectMsg(ChatLog(messages.reverse))
+      val el1 = messages.head
+      storage ! ChatMessage(el1._1, el1._2)
+      messageTester.expectMsg(Broadcast(ChatLog(messages.take(1)), List()))
+
+      val el2 = messages.drop(1).head
+      storage ! ChatMessage(el2._1, el2._2)
+      messageTester.expectMsg(Broadcast(ChatLog(messages.take(2).reverse), List()))
+
+      val el3 = messages.drop(2).head
+      storage ! ChatMessage(el3._1, el3._2)
+      messageTester.expectMsg(Broadcast(ChatLog(messages.reverse), List()))
     }
   }
 
   "When receiving the GetChatLog message, FileStorage" must {
 
-    "send ChatLog to the sender" in {
+    "send ChatLog to its parent" in {
+      val testSender = "any"
       val messages = List(("test1", "msg1"), ("test2", "msg2"), ("test3", "msg3"))
       val messageTester = TestProbe()
-      val storage = TestActorRef(new FileStorage(TestStorage))
 
+      class Mock extends Actor {
+        override def receive: Receive = {
+          case msg @ _ => messageTester.ref forward msg
+        }
+        val storage = context.actorOf(Props(classOf[FileStorage], TestStorage))
+      }
+
+      val parent = TestActorRef(new Mock)
+      val storage: ActorRef = parent.underlyingActor.storage
       messages foreach { m =>
         storage ! ChatMessage(m._1, m._2)
       }
 
-      messageTester.send(storage, GetChatLog("any"))
-      messageTester.expectMsg(ChatLog(messages.reverse))
+      storage ! GetChatLog(testSender)
+
+      import scala.concurrent.duration._
+      messageTester.fishForMessage (3.seconds){
+        case m: Any => m == Broadcast(ChatLog(messages.reverse), List(testSender))
+      }
     }
   }
 

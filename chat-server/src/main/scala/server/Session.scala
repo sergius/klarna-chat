@@ -2,14 +2,14 @@ package server
 
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import messages.Dialog._
-import server.SessionManagement.{UserNotPresent, UserPresent, CheckUser}
+import server.SessionManagement.{CheckUser, UserNotPresent, UserPresent}
 
 /**
- * Represents chat client session
- * @param user The username of the client
+ * Represents chat user session
+ * @param userRef User's ActorRef
  * @param storage The actor responsible for persisting the messages
  */
-class Session(val user: ActorRef, storage: ActorRef) extends Actor with ActorLogging{
+class Session(val name: String, userRef: ActorRef, storage: ActorRef) extends Actor with ActorLogging{
 
   /**
    * A list of messages sent during the current session.
@@ -23,8 +23,8 @@ class Session(val user: ActorRef, storage: ActorRef) extends Actor with ActorLog
   def messages = messagesList
 
   private def isValid(sender: ActorRef): Boolean = {
-    val valid = sender.equals(user)
-    if (!valid) log.debug(s"Security: sender${sender.path} tried to send a message as ${user.path}")
+    val valid = sender.equals(userRef)
+    if (!valid) log.debug(s"Security: sender${sender.path} tried to send a message as ${userRef.path}")
     valid
   }
 
@@ -33,22 +33,37 @@ class Session(val user: ActorRef, storage: ActorRef) extends Actor with ActorLog
     case msg: ChatMessage =>
       if (isValid(sender())) {
         messagesList ::= msg.message
-        storage forward msg
+        storage ! msg
       }
 
     case msg: GetChatLog =>
-      if (isValid(sender())) storage forward msg
+      if (isValid(sender())) storage ! msg
 
-    case msg @ ChatLog(list) =>
-      user ! msg
+    case msg: ChatLog =>
+      filterPrivateAndSend(msg)
 
     case msg: PrivateMessage =>
-      //TODO Validity is different
+      if (isValid(sender())) {
+        storage ! msg
+      }
 
     case CheckUser(ref) =>
-      if (ref == user) {
+      if (ref == userRef) {
         sender() ! UserPresent(self)
       }
       else sender() ! UserNotPresent
+  }
+
+  private def filterPrivateAndSend(message: ChatLog): Unit = {
+    val filtered = message.messages.foldLeft(List.empty[(String, String)]) { (list, tuple) =>
+      tuple match {
+        case (username, msg) if username.startsWith("[") =>
+          if (username.contains(name)) list :+ tuple
+          else list
+        case _ =>
+          list :+ tuple
+      }
+    }
+    userRef ! ChatLog(filtered)
   }
 }

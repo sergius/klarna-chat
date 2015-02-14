@@ -35,7 +35,7 @@ trait SessionManagement {
           sender() ! LoginError(s"Name $name already in use")
         case _ =>
           verifyDuplicateSession(name, ref)
-          val session = context.actorOf(Props(classOf[Session], ref, storage))
+          val session = context.actorOf(Props(classOf[Session], name, ref, storage))
           sessionsMap += name -> session
           log.info(s"User $name logged in")
           sender() ! LoginAck(name)
@@ -45,7 +45,6 @@ trait SessionManagement {
       closeSession(username)
 
     case Duplicate(username, user, session) =>
-      println("+++ Duplicate message received")
       user ! LoginError(s"The session for $username is a duplicate one and will be closed")
       closeSession(username)
       resendActualName(user, session)

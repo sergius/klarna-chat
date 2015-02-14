@@ -1,12 +1,13 @@
 package persistence
 
-import java.nio.file.{StandardOpenOption, Files, Paths}
+import java.nio.file.{Files, Paths, StandardOpenOption}
 
 import akka.actor.{Actor, ActorLogging, Props}
 import akka.agent.Agent
-import messages.Dialog.{GetChatLog, ChatLog, ChatMessage}
+import messages.Dialog.{ChatLog, ChatMessage, GetChatLog, PrivateMessage}
+import server.ChatManagement.Broadcast
 
-import scala.io.{Source, BufferedSource}
+import scala.io.{BufferedSource, Source}
 import scala.util.{Failure, Success, Try}
 
 
@@ -46,19 +47,33 @@ class FileStorage(val filePath: String) extends Actor with ActorLogging {
   val chatLogAgent = Agent(chatLog)
 
   override def receive: Receive = {
+
     case ChatMessage(user, message) =>
-      val userRef = sender()
       chatLogAgent alter ((user, message) :: _) onComplete {
         case Success(_) =>
-          userRef ! ChatLog(chatLogAgent())
+          context.parent ! Broadcast(ChatLog(chatLogAgent()), List())
           context.actorOf(Props(classOf[Persister], filePath)) ! Persist(user, message)
         case _ =>
           log.debug(s"There was a problem writing to file $filePath")
         // omit handling it in this simple application
       }
-    case GetChatLog(_) =>
-      sender ! ChatLog(chatLogAgent())
+
+    case GetChatLog(username) =>
+      context.parent ! Broadcast(ChatLog(chatLogAgent()), List(username))
+
+    case PrivateMessage(from, to, message) =>
+      val format = privMsgFormat(from, to)
+      chatLogAgent alter ((format, message) :: _) onComplete {
+        case Success(_) =>
+          context.parent ! Broadcast(ChatLog(chatLogAgent()), List(from, to))
+          context.actorOf(Props(classOf[Persister], filePath)) ! Persist(format, message)
+        case _ =>
+          log.debug(s"There was a problem writing to file $filePath")
+        // omit handling it in this simple application
+      }
   }
+
+  private def privMsgFormat(from: String, to: String) = s"[$from -> $to]"
 }
 
 /**

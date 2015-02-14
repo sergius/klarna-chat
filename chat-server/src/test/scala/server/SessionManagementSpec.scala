@@ -36,7 +36,7 @@ with BeforeAndAfterAll {
       val sessionMngmnt = system.actorOf(Props[SessionManagementTestImpl])
 
       messageTester1.send(sessionMngmnt, Login(user, system.actorOf(Props[Dummy])))
-      messageTester1.expectMsg(LoginAck)
+      messageTester1.expectMsg(LoginAck(user))
 
       messageTester2.send(sessionMngmnt, Login(user, system.actorOf(Props[Dummy])))
       messageTester2.expectMsgClass(classOf[LoginError])
