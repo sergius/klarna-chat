@@ -1,29 +1,15 @@
 package server
 
 import akka.actor.{Actor, ActorLogging, ActorRef}
-
-object Session {
-  sealed trait Event
-  case class Login(name: String) extends Event
-  case class LoginError(error: String) extends Event
-  case object LoginAck extends Event
-  case class Logout(name: String) extends Event
-
-  case class ChatMessage(fromUser: String, message: String) extends Event
-
-  case class GetChatLog(fromUser: String) extends Event
-  case class ChatLog(messages: List[(String, String)]) extends Event
-}
+import messages.Dialog._
+import server.SessionManagement.{UserNotPresent, UserPresent, CheckUser}
 
 /**
  * Represents chat client session
  * @param user The username of the client
  * @param storage The actor responsible for persisting the messages
  */
-class Session(user: String, storage: ActorRef) extends Actor with ActorLogging{
-  import Session._
-
-  private val loginTime = System.currentTimeMillis()
+class Session(val user: ActorRef, storage: ActorRef) extends Actor with ActorLogging{
 
   /**
    * A list of messages sent during the current session.
@@ -36,14 +22,33 @@ class Session(user: String, storage: ActorRef) extends Actor with ActorLogging{
 
   def messages = messagesList
 
-  log.info(s"*** New Session for user $user has been created at $loginTime")
+  private def isValid(sender: ActorRef): Boolean = {
+    val valid = sender.equals(user)
+    if (!valid) log.debug(s"Security: sender${sender.path} tried to send a message as ${user.path}")
+    valid
+  }
 
   override def receive: Receive = {
-    case event: ChatMessage =>
-      messagesList ::= event.message
-      storage forward event
 
-    case event: GetChatLog =>
-      storage forward event
+    case msg: ChatMessage =>
+      if (isValid(sender())) {
+        messagesList ::= msg.message
+        storage forward msg
+      }
+
+    case msg: GetChatLog =>
+      if (isValid(sender())) storage forward msg
+
+    case msg @ ChatLog(list) =>
+      user ! msg
+
+    case msg: PrivateMessage =>
+      //TODO Validity is different
+
+    case CheckUser(ref) =>
+      if (ref == user) {
+        sender() ! UserPresent(self)
+      }
+      else sender() ! UserNotPresent
   }
 }

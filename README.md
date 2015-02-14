@@ -1,4 +1,4 @@
-# Chat server
+# Chat service
 
 ## Functionality description
 

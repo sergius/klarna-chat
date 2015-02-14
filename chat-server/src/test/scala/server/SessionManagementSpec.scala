@@ -1,11 +1,11 @@
 package server
 
 import akka.actor._
-import akka.testkit.{TestActorRef, ImplicitSender, TestKit, TestProbe}
+import akka.testkit.{ImplicitSender, TestActorRef, TestKit, TestProbe}
 import commons.Commons._
+import messages.Dialog.{Login, LoginAck, LoginError, Logout}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 import persistence.{FileStorage, Persistence}
-import server.Session.{Logout, Login, LoginAck, LoginError}
 
 class SessionManagementSpec extends TestKit(ActorSystem("SessionManagementSpec"))
 with ImplicitSender
@@ -22,7 +22,7 @@ with BeforeAndAfterAll {
 
       val sessionMngmnt = TestActorRef[SessionManagementTestImpl]
 
-      sessionMngmnt ! Login(user)
+      sessionMngmnt ! Login(user, system.actorOf(Props[Dummy]))
       val sessionsKeys = sessionMngmnt.underlyingActor.sessions.keys
       sessionsKeys should have size 1
       sessionsKeys should contain(user)
@@ -35,10 +35,10 @@ with BeforeAndAfterAll {
 
       val sessionMngmnt = system.actorOf(Props[SessionManagementTestImpl])
 
-      messageTester1.send(sessionMngmnt, Login(user))
+      messageTester1.send(sessionMngmnt, Login(user, system.actorOf(Props[Dummy])))
       messageTester1.expectMsg(LoginAck)
 
-      messageTester2.send(sessionMngmnt, Login(user))
+      messageTester2.send(sessionMngmnt, Login(user, system.actorOf(Props[Dummy])))
       messageTester2.expectMsgClass(classOf[LoginError])
     }
   }
@@ -50,7 +50,7 @@ with BeforeAndAfterAll {
 
       val sessionMngmnt = TestActorRef[SessionManagementTestImpl]
 
-      sessionMngmnt ! Login(user)
+      sessionMngmnt ! Login(user, system.actorOf(Props[Dummy]))
       val sessionsKeys = sessionMngmnt.underlyingActor.sessions.keys
       sessionsKeys should have size 1
       sessionsKeys should contain(user)

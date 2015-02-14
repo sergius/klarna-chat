@@ -4,7 +4,7 @@ import java.nio.file.{StandardOpenOption, Files, Paths}
 
 import akka.actor.{Actor, ActorLogging, Props}
 import akka.agent.Agent
-import server.Session.{ChatLog, GetChatLog}
+import messages.Dialog.{GetChatLog, ChatLog, ChatMessage}
 
 import scala.io.{Source, BufferedSource}
 import scala.util.{Failure, Success, Try}
@@ -28,11 +28,8 @@ object FileStorage {
 class FileStorage(val filePath: String) extends Actor with ActorLogging {
   import context._
   import persistence.FileStorage._
-  import server.Session.ChatMessage
 
-  lazy val chatLogAgent = Agent(chatLog)
-
-  private lazy val chatLog: List[(String, String)] = Try(Source.fromFile(filePath)) match {
+  private val chatLog: List[(String, String)] = Try(Source.fromFile(filePath)) match {
     case Success(source: BufferedSource) =>
       source.getLines().toList.filter(el => el.trim.length > 0) match {
         case list @ el :: rest =>
@@ -46,14 +43,18 @@ class FileStorage(val filePath: String) extends Actor with ActorLogging {
       List.empty[(String, String)]
   }
 
+  val chatLogAgent = Agent(chatLog)
+
   override def receive: Receive = {
-    case ChatMessage(from, message) =>
-      val s = sender()
-      chatLogAgent alter ((from, message) :: _) onComplete {
+    case ChatMessage(user, message) =>
+      val userRef = sender()
+      chatLogAgent alter ((user, message) :: _) onComplete {
         case Success(_) =>
-          s ! ChatLog(chatLogAgent())
-          context.actorOf(Props(classOf[Persister], filePath)) ! Persist(from, message)
-        case _ => // omit handling it in this simple application
+          userRef ! ChatLog(chatLogAgent())
+          context.actorOf(Props(classOf[Persister], filePath)) ! Persist(user, message)
+        case _ =>
+          log.debug(s"There was a problem writing to file $filePath")
+        // omit handling it in this simple application
       }
     case GetChatLog(_) =>
       sender ! ChatLog(chatLogAgent())
@@ -74,9 +75,10 @@ class Persister(val filePath: String) extends Actor with ActorLogging {
       val txt = name + Separator + message + "\n"
       Try(Files.write(Paths.get(filePath), txt.getBytes, StandardOpenOption.APPEND)) match {
         case Success(_) =>
+          log.debug(s"Entry ($name, $message) successfully persisted to $filePath")
           context.stop(self)
         case Failure(e) =>
-          log.debug(s"*** Could not store chat log to file: $e")
+          log.debug(s"Could not store chat log to file: $e")
       }
   }
 }

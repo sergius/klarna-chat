@@ -4,11 +4,11 @@ import java.nio.file.{Files, Paths}
 
 import akka.actor.ActorSystem
 import akka.testkit.{ImplicitSender, TestActorRef, TestKit, TestProbe}
+import commons.Commons._
+import messages.Dialog.{ChatLog, ChatMessage, GetChatLog}
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, Matchers, WordSpecLike}
-import server.Session.{ChatLog, ChatMessage, GetChatLog}
 
 import scala.io.Source
-import commons.Commons._
 
 class FileStorageSpec extends TestKit(ActorSystem("FileStorageSpec"))
 with ImplicitSender
@@ -18,7 +18,7 @@ with BeforeAndAfter
 with BeforeAndAfterAll {
 
   private def emptyTestFileStorage(): Any = {
-    Files.write(Paths.get(TestStorage), "".getBytes())
+    Files.write(Paths.get(TestStorage), "".getBytes)
   }
 
   before{
@@ -60,7 +60,7 @@ with BeforeAndAfterAll {
       lines should contain(testUser + FileStorage.Separator + testMsg)
     }
 
-    "return updated chatLog to the sender of ChatMessage" in {
+    "return updated chatLog to the sender of ChatMessage (i.e. to ChatManagement)" in {
       val messages = List(("test1", "msg1"), ("test2", "msg2"), ("test3", "msg3"))
       val storage = TestActorRef(new FileStorage(TestStorage))
       val messageTester = TestProbe()

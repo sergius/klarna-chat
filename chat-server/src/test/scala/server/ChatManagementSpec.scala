@@ -2,8 +2,8 @@ package server
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
+import messages.Dialog.{ChatError, ChatLog, ChatMessage}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
-import server.Session.{ChatLog, ChatMessage}
 
 class ChatManagementSpec extends TestKit(ActorSystem("ChatManagementSpec"))
 with ImplicitSender
@@ -14,6 +14,18 @@ with BeforeAndAfterAll {
   override def afterAll(): Unit = system.shutdown()
 
   "When ChatManagement receives ChatMessage(from, message), it" must {
+    "respond with ChatError if the user is not logged in" in {
+      val user = "user"
+      val messageTester = TestProbe()
+      val sessions = Map.empty[String, ActorRef]
+
+      val chatMngmnt = system.actorOf(Props(classOf[ChatManagementTestImpl], sessions))
+
+      messageTester.send(chatMngmnt, ChatMessage(user, "any"))
+
+      messageTester.expectMsgClass(classOf[ChatError])
+    }
+
     "send the message to the corresponding session" in {
       val user1 = "user1"
       val messageTester1 = TestProbe()
