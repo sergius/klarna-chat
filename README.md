@@ -139,6 +139,6 @@ You'll have to change the `path` to the corresponding values (the same as in `ap
 
 That's it. You're ready to chat. Start the server running `src/main/scala/app/ChatServiceApp` in the server module. Then, you can connect as many clients as you wish, from the same machine or from different ones, running `src/main/scala/app/ChatClientApp` in the client module.
 
-You'll probably have to do it from your IDE (I hope it's IntelliJ, as it has the necessary plugins for Scala and SBT). If you have machines with Scala installed, you can package the modules to `.jar` files and port them like that.
+You'll probably have to do it from your IDE (I hope it's IntelliJ, as it has the necessary plugins for Scala and SBT). If you have machines with Scala installed, you can package the client module to a `.jar` file and port and run it like that.
 
 *Note: If you connect your clients from the same machine (using `localhost` for server), you should set the `port = 0` in the `application.conf` __(on the client side only)__ to let the system choose the port automatically, otherwise you'll get the exception of port already in use.*
