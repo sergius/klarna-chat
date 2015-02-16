@@ -50,11 +50,10 @@ class RemoteServer(path: String) extends Actor with ActorLogging {
         service ! ChatMessage(username, message)
 
       case PrivateMessage(_, to, message) =>
-        println(s"=== Sending private message to ($to): $message ===")
         service ! PrivateMessage(username, to, message)
 
-      case msg @ Connected(_) =>
-        service ! Connected(username)
+      case msg @ Connected =>
+        service ! Connected
 
       case GetChatLog(_) =>
         service ! GetChatLog(username)
@@ -64,6 +63,7 @@ class RemoteServer(path: String) extends Actor with ActorLogging {
         case LoginAck(name) =>
           username = name
           println(s"*** Logged in as $username")
+          service ! GetChatLog(username)
 
         case LoginError(error) =>
           println(s"*** Error at login: $error")

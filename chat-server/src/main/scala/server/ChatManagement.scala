@@ -34,7 +34,7 @@ trait ChatManagement {
     case message @ PrivateMessage(username, to, _) =>
       forwardPrivIfLogged(message)
 
-    case message @ Connected(username) =>
+    case message @ Connected =>
       sender() ! OnLine(sessions.keys.toList)
 
     case Broadcast(message, usernames) if usernames isEmpty =>

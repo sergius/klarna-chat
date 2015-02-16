@@ -13,7 +13,7 @@ object Dialog {
   case class ChatMessage(username: String, message: String) extends Request
   case class PrivateMessage(from: String, to: String, message: String) extends Request
   case class GetChatLog(username: String) extends Request
-  case class Connected(username: String) extends Request
+  case object Connected extends Request
   
   abstract class Response
   case class LoginError(error: String) extends Response

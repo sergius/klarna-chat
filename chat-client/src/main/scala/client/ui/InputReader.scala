@@ -36,12 +36,14 @@ class InputReader extends Actor with Terminal {
       "1. 'login Batman' - to login as Batman\n\n" +
       "(*note: the rest of commands start with '$\\'*)\n\n" +
       "2. '$\\help' - to see these instructions\n\n" +
-      "3. '$\\logout' - to logout\n\n" +
-      "4. '$\\exit' - to exit\n\n" +
-      "5. '$\\private John Only you read it' - to write a private message to John\n\n" +
+      "3. '$\\logout' - to logout from chat\n\n" +
+      "4. '$\\exit' - to exit this application\n\n" +
+      "5. '$\\private John It's a secret' - to write a private message to John\n\n" +
       "6. '$\\connected' - to see all connected users\n\n" +
       "7. '$\\status' - to see a refreshed chat timeline\n\n" +
-      "ANYTHING else will be treated as message and will be published to chat.\n\n"
+      "Please remember: when logged-in, whatever you type, \n" +
+      "if it's not one of the mentioned commands, it will be treated\n" +
+      " as a message and will be published to the chat.\n\n"
     )
   }
 
@@ -58,7 +60,7 @@ class InputReader extends Actor with Terminal {
         commandLoop()
 
       case OnLineUsers =>
-        remoteServer ! Connected("")
+        remoteServer ! Connected
         commandLoop()
 
       case Leave =>
