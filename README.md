@@ -17,7 +17,7 @@ As I am applying for a role in the Functional Programming team - and I don't kno
 
 ### Robustness & capacity
 
-There's no more robust and capable tool for JVM-based systems than Akka, for implementations in a distributed and concurrent environment. Therefore it was an easy an natural solution for the proposed problem, being a direct and implicit answer to its requirements.
+There's no more robust and capable tool for JVM-based systems than Akka, for implementations in a distributed and concurrent environment. Therefore it was an easy and natural solution for the proposed problem, being a direct and implicit answer to its requirements.
 
 ### Features
 
@@ -53,7 +53,7 @@ When you start your client you're going to see the following menu (in a terminal
 
 ```
 
-As you can see, the characters `$\` are reserved for special commands, i.e. for sentences that should not be treated as simple messages to be published to the chat. Anything else you type in when in your session, will be treated as message and will be published to the chat, so everybody will (be able to) read it.
+As you can see, the characters `$\` are a prefix for special commands, i.e. for sentences that should not be treated as simple messages to be published to the chat. Anything else you type in when in your session, will be treated as message and will be published to the chat, so everybody will (be able to) read it.
 
 __I would like to mention something regarding the special characters `$\`__
 
@@ -73,7 +73,7 @@ Perhaps the best way to explain the server functionality is based on the API com
 
  1. `Login(username: String, ref: ActorRef)`: The login request is satisfied with the following conditions:
     * The user is not trying to login with already existing username
-    * The user is not already logged in (with a different username) only one session per user is permitted.
+    * The user is not already logged in (with a different username), only one session per user is permitted.
 
     If any of these conditions are not satisfied, a `LoginError(error: String)` message is received by the client (the app, not the user)
 
@@ -85,7 +85,7 @@ Perhaps the best way to explain the server functionality is based on the API com
 
  3. `ChatMessage(username: String, message: String)`: A message published by the user.
 
-    *Note: this would be *anything* typed in without the `$\` prefix. (Note that `login` command is the only one that doesn't use this prefix)*
+    *Note: this would be *anything* which doesn't correspond to the special commands, even when the characters `$\` are used: when not combined with the commands, there's no reason to treat them in a special way.
 
  4. `PrivateMessage(from: String, to: String, message: String)`: The user sends a private message to another user. These messages can only be seen by the sender and the receiver and they will figure in the chat timeline for only these users.
 
@@ -93,7 +93,7 @@ Perhaps the best way to explain the server functionality is based on the API com
 
     *Note: A useful thing would be to limit somehow the requested chatline (eg. by time or amount of lines). This feature is not implemented in the current version.*
 
- 6. `Connected(username: String)`: Retrieves the list of all connected users. This command is accepted even when the user is not logged in. The idea is that a user (which is going to log-in) might first want to see if other certain users are connected.
+ 6. `Connected`: Retrieves the list of all connected users. This command is accepted even when the user is not logged in. The idea is that a user (which is going to log-in) might first want to see if other certain users are connected.
 
  7. `ChatError(error: String)`: Response to some misuse or error during the chat. So far it was used when a user tries to chat without having logged-in.
 
