@@ -30,7 +30,8 @@ class FileStorage(val filePath: String) extends Actor with ActorLogging {
   import context._
   import persistence.FileStorage._
 
-  private val chatLog: List[(String, String)] = Try(Source.fromFile(filePath)) match {
+  private val chatLog: List[(String, String)] =
+    Try(Source.fromFile(filePath)) match {
     case Success(source: BufferedSource) =>
       source.getLines().toList.filter(el => el.trim.length > 0) match {
         case list @ el :: rest =>
@@ -44,7 +45,9 @@ class FileStorage(val filePath: String) extends Actor with ActorLogging {
       List.empty[(String, String)]
   }
 
-  val chatLogAgent = Agent(chatLog)
+  private val chatLogAgent = Agent(chatLog)
+
+  def chatRecord = chatLogAgent()
 
   override def receive: Receive = {
 

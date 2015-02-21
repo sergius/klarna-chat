@@ -4,7 +4,6 @@ import java.nio.file.{Files, Paths}
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.testkit._
-import akka.util.Timeout
 import commons.Commons._
 import messages.Dialog.{ChatLog, ChatMessage, GetChatLog}
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, Matchers, WordSpecLike}
@@ -39,12 +38,12 @@ with BeforeAndAfterAll {
       val storageRef = TestActorRef(new FileStorage(TestStorage))
       val storageActor = storageRef.underlyingActor
 
-      storageActor.chatLogAgent() shouldBe empty
+      storageActor.chatRecord shouldBe empty
 
       storageRef ! ChatMessage(testUser, testMsg)
 
-      storageActor.chatLogAgent() should have size 1
-      storageActor.chatLogAgent() should contain((testUser, testMsg))
+      storageActor.chatRecord should have size 1
+      storageActor.chatRecord should contain((testUser, testMsg))
     }
 
     "persist it to the file" in {
