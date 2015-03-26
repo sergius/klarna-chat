@@ -11,7 +11,7 @@ Your solution will be judged on *robustness, capacity, features, and the beauty 
 
 ### Language
 
-As I am applying for a role in the Functional Programming team - and I don't know to program in Erlang, yet - I decided to present my solution in Scala, as the closest to functional programming from languages that I know (and  totally compatible with Java). Also, as another intent of getting close to Erlang, I chose to use Akka, an implementation of actor model for Scala and Java, and remembering that it was Erlang the first language to have implemented the actors.
+I decided to present my solution in Scala, as the closest to functional programming from languages that I know (and  totally compatible with Java). Also, as another intent of getting close to Erlang, I chose to use Akka, an implementation of actor model for Scala and Java, and remembering that it was Erlang the first language to have implemented the actors.
 
  I would like to mention that I avoided on purpose a trivial implementation in Java, as it could test just the elementary notions of Java and something on networking and concurrency, *at most*, and I believe this is not what the team would like to assess.
 
